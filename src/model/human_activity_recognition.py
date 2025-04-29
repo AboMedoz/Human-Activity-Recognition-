@@ -1,3 +1,4 @@
+import os
 import pickle
 
 import pandas as pd
@@ -5,15 +6,18 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.model_selection import cross_val_score, train_test_split
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.abspath(os.path.join(BASE_DIR, '..'))
+TRAIN_PATH = os.path.join(ROOT, 'data', 'Dataset', 'train.csv')
 
 # https://www.kaggle.com/datasets/uciml/human-activity-recognition-with-smartphones
-df = pd.read_csv('Dataset/train.csv')
+df = pd.read_csv(TRAIN_PATH)
 
 # Drop 'subject' as it's useless ig?
 df = df.drop('subject', axis=1)
 
 # Factorize
-df['Activity'], _ = pd.factorize(df['Activity'])
+df['Activity'], activity_labels = pd.factorize(df['Activity'])
 
 # Features
 x = df.copy().drop('Activity', axis=1)
@@ -40,4 +44,6 @@ print(f"Feature Importance:\n{important_features}")
 
 with open('human_activity_recognition.pkl', 'wb') as file:
     pickle.dump(model, file)
+with open('activity_labels.pkl', 'wb') as file:
+    pickle.dump(activity_labels, file)
 print('Model Saved.')
