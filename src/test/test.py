@@ -32,6 +32,9 @@ y = df['Activity']
 
 y_pred = model.predict(x)
 
+df['Predicted_Activity'] = y_pred
+df.to_csv('prediction.csv')
+
 print(f"Accuracy: {accuracy_score(y, y_pred) * 100:.2f}")
 print(f"Classification Report: {classification_report(y, y_pred)}")
 print(f"Confusion Matrix: {confusion_matrix(y, y_pred)}")
