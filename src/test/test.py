@@ -1,40 +1,29 @@
+import joblib
 import os
-import pickle
 
-import numpy as np
 import pandas as pd
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score
+from tensorflow.keras.models import load_model
 
-BASE_DIR = os.path.dirname(__file__)
-ROOT = os.path.abspath(os.path.join(BASE_DIR, '..'))
-TEST_PATH = os.path.join(ROOT, 'data', 'Dataset', 'train.csv')
-MODEL_PATH = os.path.join(ROOT, 'model', 'human_activity_recognition.pkl')
-LABELS_PATH = os.path.join(ROOT, 'model', 'activity_labels.pkl')
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+DATA_PATH = os.path.join(ROOT, 'data', 'test')
+MODELS_PATH = os.path.join(ROOT, 'models')
 
-with open(MODEL_PATH, 'rb') as model_file:
-    model = pickle.load(model_file)
-with open(LABELS_PATH, 'rb') as labels:
-    activity_labels = pickle.load(labels)
+model = load_model(os.path.join(MODELS_PATH, 'ann_model.keras'))
+scaler = joblib.load(os.path.join(MODELS_PATH, 'ann_scaler.pkl'))
+le = joblib.load(os.path.join(MODELS_PATH, 'ann_label_encoder.pkl'))
 
-df = pd.read_csv(TEST_PATH)
-print(df.head(5))
-df.info()
+df = pd.read_csv(os.path.join(DATA_PATH, 'test.csv'))
 
-print(np.sum(df.isna(), axis=0))  # No NA's
-
-df = df.drop('subject', axis=1)
-
-df['Activity'] = pd.Categorical(df['Activity'], categories=activity_labels)
-df['Activity'] = df['Activity'].cat.codes
-
-x = df.copy().drop('Activity', axis=1)
+x = df.drop(columns=['subject', 'Activity'])
 y = df['Activity']
 
-y_pred = model.predict(x)
+x = scaler.transform(x)
 
-df['Predicted_Activity'] = y_pred
-df.to_csv('prediction.csv')
+y = le.transform(y)
 
-print(f"Accuracy: {accuracy_score(y, y_pred) * 100:.2f}")
-print(f"Classification Report: {classification_report(y, y_pred)}")
-print(f"Confusion Matrix: {confusion_matrix(y, y_pred)}")
+pred_prob = model.predict(x)
+predictions = pred_prob.argmax(axis=1)
+
+accuracy = accuracy_score(y, predictions)
+print(f"Accuracy: {accuracy:.2f}")
